@@ -18,6 +18,9 @@ import androidx.core.app.NotificationManagerCompat
 import kotlin.math.abs
 
 class TrackerService : Service(), SensorEventListener {
+    private var totalJumpSteps = 0
+    private val sensorThreshold = 12.0
+    private val maxStepLimit = 2
 
     override fun onBind(p0: Intent?): IBinder? {
         return null
@@ -29,17 +32,44 @@ class TrackerService : Service(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER){
             val y = event.values[1]
-            val jumpThreshold = 15.0
 
-            if (abs(y) > jumpThreshold){
-                Log.d("TrackerService","LOMPATAN Terdeteksi! y: $y")
-
-                sensorManager.unregisterListener(this)
-
-                showJumpNotification()
-                stopSelf()
+            if (abs(y) > sensorThreshold){
+                totalJumpSteps++
+                if (totalJumpSteps > maxStepLimit){
+                    sensorManager.unregisterListener(this)
+                    sendExerciseFinishedNotification()
+                    stopSelf()
+                }
             }
         }
+    }
+
+    private fun sendExerciseFinishedNotification(){
+        val notifyIntent = Intent(this, MainActivity::class.java).apply {
+            action = MainActivity.EXERCISE_ACTION_STOPPED
+            putExtra("KEY_TOTAL_JUMPS",totalJumpSteps)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,100,notifyIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this,NOTIFICATION_CHANNEL_ID_JUMP_DETECTED)
+            .setContentTitle("Latihan selesai!")
+            .setContentText("Target tercapai. Ketuk untuk simpan ke kalender.")
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        try{
+            NotificationManagerCompat.from(this).notify(NOTIFICATION_ID_JUMP_DETECTED, notification)
+        }catch (e: SecurityException){
+            Log.e("TrackerService", "Izin POST_NOTIFICATION tidak aktif: ${e.message}")
+        }
+
     }
 
     private lateinit var sensorManager: SensorManager
@@ -118,32 +148,32 @@ class TrackerService : Service(), SensorEventListener {
             .build()
     }
 
-    private fun showJumpNotification(){
-        val mainActivityIntent = Intent(this, MainActivity::class.java).apply {
-            action = MainActivity.ACTION_SERVICE_STOPPED_JUMP
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-
-        val pendingMainActivityIntent = PendingIntent.getActivity(
-            this,1,mainActivityIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val jumpNotification = NotificationCompat.Builder(this,NOTIFICATION_CHANNEL_ID_JUMP_DETECTED)
-            .setContentTitle("Lompatan Terdeteksi")
-            .setContentText("Service Berhenti. Ketuk untuk membuka aplikasi.")
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setContentIntent(pendingMainActivityIntent).setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-        try{
-            NotificationManagerCompat.from(this).notify(NOTIFICATION_ID_JUMP_DETECTED, jumpNotification)
-        } catch (e: SecurityException){
-            Log.e("TrackerService",
-                "Gagal memunculkan notifikasi karena permission POST_NOTIFICATION tidak aktif: ${e.message}")
-        }
-    }
+//    private fun showJumpNotification(){
+//        val mainActivityIntent = Intent(this, MainActivity::class.java).apply {
+//            action = MainActivity.ACTION_SERVICE_STOPPED_JUMP
+//            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+//        }
+//
+//        val pendingMainActivityIntent = PendingIntent.getActivity(
+//            this,1,mainActivityIntent,
+//            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//        )
+//
+//        val jumpNotification = NotificationCompat.Builder(this,NOTIFICATION_CHANNEL_ID_JUMP_DETECTED)
+//            .setContentTitle("Lompatan Terdeteksi")
+//            .setContentText("Service Berhenti. Ketuk untuk membuka aplikasi.")
+//            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+//            .setContentIntent(pendingMainActivityIntent).setAutoCancel(true)
+//            .setPriority(NotificationCompat.PRIORITY_HIGH)
+//            .build()
+//
+//        try{
+//            NotificationManagerCompat.from(this).notify(NOTIFICATION_ID_JUMP_DETECTED, jumpNotification)
+//        } catch (e: SecurityException){
+//            Log.e("TrackerService",
+//                "Gagal memunculkan notifikasi karena permission POST_NOTIFICATION tidak aktif: ${e.message}")
+//        }
+//    }
 
     override fun onDestroy() {
         super.onDestroy()
