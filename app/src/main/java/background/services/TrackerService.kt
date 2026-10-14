@@ -20,7 +20,7 @@ import kotlin.math.abs
 class TrackerService : Service(), SensorEventListener {
     private var totalJumpSteps = 0
     private val sensorThreshold = 12.0
-    private val maxStepLimit = 2
+    private val maxStepLimit = 5
 
     override fun onBind(p0: Intent?): IBinder? {
         return null
@@ -35,6 +35,7 @@ class TrackerService : Service(), SensorEventListener {
 
             if (abs(y) > sensorThreshold){
                 totalJumpSteps++
+                Log.d("TrackerService", "Lompatan ke-$totalJumpSteps terdeteksi! Nilai Y: $y")
                 if (totalJumpSteps > maxStepLimit){
                     sensorManager.unregisterListener(this)
                     sendExerciseFinishedNotification()
