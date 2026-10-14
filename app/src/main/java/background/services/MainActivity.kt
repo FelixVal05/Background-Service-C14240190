@@ -28,6 +28,9 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        val _btnStart = findViewById<Button>(R.id.btnStart)
+        val _tvStatus = findViewById<TextView>(R.id.statusTextView)
+
         _btnStart.setOnClickListener {
             if (hasAllPermissions()){
                 startTrackerService()
