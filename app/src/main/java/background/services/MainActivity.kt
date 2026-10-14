@@ -40,6 +40,8 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
+
+        handleIntent(intent)
     }
 
     companion object{
