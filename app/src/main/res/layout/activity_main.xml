@@ -28,5 +28,20 @@
             android:id="@+id/btnStart"
             android:layout_marginTop="4dp">
         </Button>
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tvExerciseStatus"
+            android:text="Tekan tombol untuk memulai latihan"
+            android:layout_marginTop="16dp">
+        </TextView>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/btnStartExercise"
+            android:text="Mulai Latihan baru"
+            android:layout_marginTop="4dp">
+        </Button>
     </LinearLayout>
 </ScrollView>
